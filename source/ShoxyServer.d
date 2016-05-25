@@ -85,7 +85,7 @@ class ShoxyServer
             this.serverURL = serverURL;
         }
 
-        void showIndex(HTTPServerRequest req, HTTPServerResponse res);
+        void showIndex(HTTPServerRequest req, HTTPServerResponse res)
         {
             res.render!("index.dt");
         } 
@@ -95,7 +95,7 @@ class ShoxyServer
             auto url = req.json["url"];
 
             if(!url || !isRealUrl(url)) {
-                res.statusCode     = HTTPStatus.badRequest;;
+                res.statusCode     = HTTPStatus.badRequest;
                 res.statusPhrase = url? "URL does not exist" : "Bad URL param";
                 return;
             }
@@ -120,7 +120,7 @@ class ShoxyServer
             res.writeJsonBody(json);
         } 
 
-        void deleteURLRequest(HTTPServerRequest req, HTTPServerResponse res);
+        void deleteURLRequest(HTTPServerRequest req, HTTPServerResponse res)
         {
             auto deleteKey = req.json["key"];
 
@@ -140,7 +140,7 @@ class ShoxyServer
             res.statusPhrase = "Key not found";
         }
 
-        void getURLRequest(HTTPServerRequest req, HTTPServerResponse res);
+        void getURLRequest(HTTPServerRequest req, HTTPServerResponse res)
         {
             auto shortCode = req.params["shortCode"];
 

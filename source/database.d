@@ -1,5 +1,6 @@
 import mysql.connection;
 import std.stdio;
+import std.format;
 
 
 struct DatabaseEntry
@@ -55,8 +56,8 @@ class Database
 
         bool DBExists() {
             string query = "SHOW TABLES";
-            auto cmd = new Command(conn, query);
-            auto result = cmd.execSQLResult();
+            auto command = new Command(conn, query);
+            auto result = command.execSQLResult();
             writeln("Database exists!");
             return !(result.length == 0);
         }
@@ -64,8 +65,7 @@ class Database
         void createDB()
         {
             auto command = new Command(conn, Schema);
-            uint rowsAffected;
-            cmd.execSQL(rowsAffected);
+            command.execSQL();
         }
 
     public:
@@ -81,8 +81,8 @@ class Database
                 .format(value); 
                 
 
-            auto cmd = new Command(conn, query);
-            auto result = cmd.execSQLResult();
+            auto command = new Command(conn, query);
+            auto result = command.execSQLResult();
 
             foreach (r; result) {
                 writeln(r);
@@ -95,8 +95,8 @@ class Database
         {
             string query = "INSERT INTO entries(short_code, url, delete_key) VALUES (%s, %s, %s)"
                 .format(entry.shortCode, entry.url, entry.deleteKey);
-            uint rowsAffected;
-            cmd.execSQL(rowsAffected);
+            auto command = new Command(conn, query);
+            command.execSQL();
         }
 
         void deleteEntry(DatabaseEntry entry)
@@ -104,8 +104,8 @@ class Database
                 assert(entry.id > 0);
             }
         body {
-            auto query = "DELETE FROM entries WHERE id = "~entry.id;
-            uint rowsAffected;
-            cmd.execSQL(rowsAffected);
+            string query = "DELETE FROM entries WHERE id = %d".format(entry.id);;
+            auto command = new Command(conn, query);
+            command.execSQL();
         }
 }

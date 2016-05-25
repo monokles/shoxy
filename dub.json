@@ -4,7 +4,8 @@
 		"mono"
 	],
 	"dependencies": {
-		"vibe-d": "~>0.7.28"
+		"vibe-d": "~>0.7.28",
+		"mysql-native": "~>0.1.4"
 	},
 	"description": "url shortener and proxy",
 	"copyright": "Copyright © 2016, mono",

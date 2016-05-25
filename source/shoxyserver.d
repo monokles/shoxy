@@ -2,11 +2,12 @@ import vibe.d;
 import vibe.data.json;
 import std.ascii;
 import std.random;
+import database;
 
 class ShoxyServer
 {
     private:
-        DatabaseConnection DB;
+        Database DB;
         string serverURL;
         string allowedChars = letters ~ digits ~ "_-";
 
@@ -79,7 +80,7 @@ class ShoxyServer
 
 
     public:
-        this(DatabaseConnection DB, string serverURL)
+        this(Database  DB, string serverURL)
         {
             this.DB = DB;
             this.serverURL = serverURL;

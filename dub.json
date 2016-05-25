@@ -1,0 +1,13 @@
+{
+	"name": "shoxy",
+	"authors": [
+		"mono"
+	],
+	"dependencies": {
+		"vibe-d": "~>0.7.28"
+	},
+	"description": "url shortener and proxy",
+	"copyright": "Copyright © 2016, mono",
+	"license": "WTFPL",
+    "versions": ["VibeDefaultMain"]
+}

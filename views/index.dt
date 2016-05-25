@@ -1,0 +1,6 @@
+doctype html
+head
+    title Shoxy
+body
+    h1 Shoxy - URL Shortener and proxy
+

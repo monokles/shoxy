@@ -1,6 +1,10 @@
+import mysql.connection;
+import std.stdio;
+
+
 struct DatabaseEntry
 {
-    long id; 
+    immutable long id; 
     string shortCode; 
     string url; 
     string deleteKey; 
@@ -15,49 +19,93 @@ struct DatabaseEntry
 
 struct DatabaseSettings
 {
-    string URL; 
+    string host; 
     ushort port; 
     string user; 
     string password; 
+    string database; 
 }
 
 private string Schema = 
-//TODO create schema based on structs
 """
-ADD TABLE 'Shoxy' COLUMNS
-yaddayadaa
+CREATE TABLE IF NOT EXISTS entries (
+    id              BIGINT        NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    short_code      VARCHAR(10)   NOT NULL,
+    url             VARCHAR(200)  NOT NULL,
+    delete_key      CHAR(30)      NOT NULL,
+    create_datetime DATETIME      DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE INDEX (short_code),
+    UNIQUE INDEX (delete_key)
+)
 """;
 
 class Database
 {
     private:
         DatabaseSettings settings;
+        Connection conn;
 
         void connect()
         {
+            string connStr = "host=%s;port=%d;user=%s;pwd=%s;db=%s"
+                .format(settings.host, settings.port, 
+                        settings.user, settings.password, settings.database);
+            conn = new Connection(connStr);
+        }
+
+        bool DBExists() {
+            string query = "SHOW TABLES";
+            auto cmd = new Command(conn, query);
+            auto result = cmd.execSQLResult();
+            writeln("Database exists!");
+            return !(result.length == 0);
         }
 
         void createDB()
         {
+            auto command = new Command(conn, Schema);
+            uint rowsAffected;
+            cmd.execSQL(rowsAffected);
         }
 
     public:
-        this(Databasesettings settings)
+        this(DatabaseSettings settings)
         {
-            this.settings = settings
+            this.settings = settings;
+            connect();
         }
 
-        DatabaseEntry getBy(string column)(string value)
+        DatabaseEntry[] where(string table, string column, string operand = "=")(string value)
         {
-            auto query = "SELECT * WHERE "~column~" = "~value~";";
+            string query = mixin(`"SELECT * FROM `~table~` WHERE `~column~` `~ operand ~ ` '%s'"`)
+                .format(value); 
+                
+
+            auto cmd = new Command(conn, query);
+            auto result = cmd.execSQLResult();
+
+            foreach (r; result) {
+                writeln(r);
+            }
+
+            return null;
         }
 
-        void insertEntry()
+        void insertEntry(DatabaseEntry entry)
         {
+            string query = "INSERT INTO entries(short_code, url, delete_key) VALUES (%s, %s, %s)"
+                .format(entry.shortCode, entry.url, entry.deleteKey);
+            uint rowsAffected;
+            cmd.execSQL(rowsAffected);
         }
 
         void deleteEntry(DatabaseEntry entry)
-        {
-            auto query = "DELETE FROM Shoxy WHERE "~column~" = "~value~";";
+            in { 
+                assert(entry.id > 0);
+            }
+        body {
+            auto query = "DELETE FROM entries WHERE id = "~entry.id;
+            uint rowsAffected;
+            cmd.execSQL(rowsAffected);
         }
 }

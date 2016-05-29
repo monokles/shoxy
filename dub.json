@@ -1,14 +1,23 @@
 {
-	"name": "shoxy",
-	"authors": [
-		"mono"
-	],
-	"dependencies": {
-		"vibe-d": "~>0.7.28",
-		"mysql-native": "~>0.1.4"
-	},
-	"description": "url shortener and proxy",
-	"copyright": "Copyright © 2016, mono",
-	"license": "WTFPL",
-    "versions": ["VibeDefaultMain"]
+    "name": "shoxy",
+    "authors": [
+        "mono"
+    ],
+    "dependencies": {
+        "vibe-d": "~>0.7.28",
+        "mysql-native": "~>0.1.4"
+    },
+    "description": "url shortener and proxy",
+    "copyright": "Copyright © 2016, mono",
+    "license": "WTFPL",
+    "configurations": [
+        {
+            "name": "application",
+            "targetType": "executable",
+            "versions": ["VibeDefaultMain"]
+        },
+        {
+            "name": "library"
+        }
+    ]
 }

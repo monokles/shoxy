@@ -1,9 +1,10 @@
 import mysql.connection;
 import std.stdio;
+import vibe.d;
 import std.format;
 
 
-struct DatabaseEntry
+struct Entry
 {
     immutable long id; 
     string shortCode; 
@@ -18,13 +19,23 @@ struct DatabaseEntry
     }
 }
 
-struct DatabaseSettings
+class DatabaseSettings
 {
-    string host; 
-    ushort port; 
-    string user; 
-    string password; 
-    string database; 
+    public:
+        immutable string host; 
+        immutable ushort port; 
+        immutable string user; 
+        immutable string password; 
+        immutable string database; 
+
+        this(string host, ushort port, string user, string password, string database) 
+        {
+            this.host = host;
+            this.port = port;
+            this.user = user;
+            this.password = password;
+            this.database = database;
+        }
 }
 
 private string Schema = 
@@ -58,14 +69,20 @@ class Database
             string query = "SHOW TABLES";
             auto command = new Command(conn, query);
             auto result = command.execSQLResult();
-            writeln("Database exists!");
-            return !(result.length == 0);
+            bool exists = !(result.length == 0);
+            if(exists) {
+                logInfo("Schema found.");
+            } else {
+                logInfo("Schema not found.");
+            }
+            return exists;
         }
 
         void createDB()
         {
             auto command = new Command(conn, Schema);
             command.execSQL();
+            logInfo("Tables created!");
         }
 
     public:
@@ -73,9 +90,12 @@ class Database
         {
             this.settings = settings;
             connect();
+            if(!DBExists()) {
+                createDB();
+            }
         }
 
-        DatabaseEntry[] where(string table, string column, string operand = "=")(string value)
+        Entry[] where(string table, string column, string operand = "=")(string value)
         {
             string query = mixin(`"SELECT * FROM `~table~` WHERE `~column~` `~ operand ~ ` '%s'"`)
                 .format(value); 
@@ -84,14 +104,20 @@ class Database
             auto command = new Command(conn, query);
             auto result = command.execSQLResult();
 
+            Entry[] entries;
             foreach (r; result) {
-                writeln(r);
+                auto e = new Entry;
+                e.id        = r["id"];
+                e.shortCode = r["short_code"];
+                e.url       = r["url"];
+                e.deleteKey = r["delete_key"];
+                entries[] = e;
             }
 
-            return null;
+            return entries;
         }
 
-        void insertEntry(DatabaseEntry entry)
+        void insertEntry(Entry* entry)
         {
             string query = "INSERT INTO entries(short_code, url, delete_key) VALUES (%s, %s, %s)"
                 .format(entry.shortCode, entry.url, entry.deleteKey);
@@ -99,13 +125,42 @@ class Database
             command.execSQL();
         }
 
-        void deleteEntry(DatabaseEntry entry)
+        void deleteEntry(Entry entry)
             in { 
-                assert(entry.id > 0);
+                enforce(entry.id > 0);
             }
+
         body {
-            string query = "DELETE FROM entries WHERE id = %d".format(entry.id);;
+            string query = "DELETE FROM entries WHERE id = %d".format(entry.id);
             auto command = new Command(conn, query);
             command.execSQL();
         }
+
+        //very basic testing
+        unittest
+        {
+            auto settings = new DatabaseSettings("localhost", 3306, 
+                    "shoxy_user", "shoxy_pass", "shoxy");
+
+            auto DB = new Database(settings);
+
+            //Make sure testcase data doesn't get stored to disk
+            (new Command(DB.conn, "SET autocommit = 0")).execSQL();
+
+            auto entry = new Entry("bla", "google.com" , "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+            DB.insertEntry(entry);
+
+            auto results = DB.where!("entries", "shortCode")("bla");
+            assert(results.length == 1);
+            assert(results[0].url == "google.com");
+
+            DB.deleteEntry(results[0]);
+
+            results = DB.where!("entries", "shortCode")("bla");
+            assert(results.length == 0);
+
+            (new Command(DB.conn, "ROLLBACK")).execSQL();
+            (new Command(DB.conn, "SET autocommit = 1")).execSQL();
+        }
 }
+

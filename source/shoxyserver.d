@@ -6,7 +6,7 @@ import database;
 
 class ShoxyServer
 {
-    private:
+    /*private:
         Database DB;
         string serverURL;
         string allowedChars = letters ~ digits ~ "_-";
@@ -152,5 +152,5 @@ class ShoxyServer
             } 
 
             res.statusCode = HTTPStatus.notFound;
-        }
+        }*/
 }

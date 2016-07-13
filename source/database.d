@@ -71,9 +71,9 @@ class Database
             auto result = command.execSQLResult();
             bool exists = !(result.length == 0);
             if(exists) {
-                logInfo("Schema found.");
+                logInfo("Database schema found.");
             } else {
-                logInfo("Schema not found.");
+                logInfo("Database schema not found.");
             }
             return exists;
         }
@@ -82,7 +82,7 @@ class Database
         {
             auto command = new Command(conn, Schema);
             command.execSQL();
-            logInfo("Tables created!");
+            logInfo("Database tables created!");
         }
 
     public:
@@ -95,11 +95,11 @@ class Database
             }
         }
 
-        Entry[] where(string table, string column, string operand = "=")(string value)
-        {
-            string query = mixin(`"SELECT * FROM `~table~` WHERE `~column~` `~ operand ~ ` '%s'"`)
-                .format(value); 
-                
+        Entry getBy(string column)(string value) {
+            //static assert (columns.length == values.length);
+
+
+            string query = mixin(`"SELECT * FROM 'entries' WHERE `~column~` = %s"`).format(value); 
 
             auto command = new Command(conn, query);
             auto result = command.execSQLResult();
@@ -149,15 +149,9 @@ class Database
 
             auto entry = new Entry("bla", "google.com" , "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
             DB.insertEntry(entry);
-
-            auto results = DB.where!("entries", "shortCode")("bla");
-            assert(results.length == 1);
-            assert(results[0].url == "google.com");
-
-            DB.deleteEntry(results[0]);
-
-            results = DB.where!("entries", "shortCode")("bla");
-            assert(results.length == 0);
+            auto result = DB.getBy!"short_code"("bla");
+            assert(result.url == "google.com");
+            DB.deleteEntry(result);
 
             (new Command(DB.conn, "ROLLBACK")).execSQL();
             (new Command(DB.conn, "SET autocommit = 1")).execSQL();

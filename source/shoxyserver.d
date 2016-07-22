@@ -135,7 +135,7 @@ class ShoxyServer
 
             auto entry = DB.getBy!"delete_key"(deleteKey);
             if(entry) {
-                DB.dropEntry(entry);
+                DB.deleteEntry(entry);
                 return;
             } 
 

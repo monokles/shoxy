@@ -17,6 +17,14 @@ struct Entry
         this.url        = url;
         this.deleteKey  = deleteKey;
     }
+
+    this(long id, string shortCode, string url, string deleteKey)
+    {
+        this.id  = id;
+        this.shortCode  = shortCode;
+        this.url        = url;
+        this.deleteKey  = deleteKey;
+    }
 }
 
 class DatabaseSettings
@@ -95,7 +103,7 @@ class Database
             }
         }
 
-        Entry getBy(string column)(string value) {
+        Entry*[] getBy(string column)(string value) {
             //static assert (columns.length == values.length);
 
 
@@ -104,14 +112,13 @@ class Database
             auto command = new Command(conn, query);
             auto result = command.execSQLResult();
 
-            Entry[] entries;
+            Entry*[] entries;
             foreach (r; result) {
-                auto e = new Entry;
-                e.id        = r["id"];
-                e.shortCode = r["short_code"];
-                e.url       = r["url"];
-                e.deleteKey = r["delete_key"];
-                entries[] = e;
+                auto id        = r[0].peek!long;
+                auto shortCode = r[1].peek!string;
+                auto url       = r[2].peek!string;
+                auto deleteKey = r[3].peek!string;
+                entries ~= new Entry(*id, *shortCode, *url, *deleteKey);
             }
 
             return entries;

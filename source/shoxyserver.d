@@ -122,8 +122,8 @@ class ShoxyServer
                 return;
             }
 
-            auto shortCode = randomString(5);
-            auto deleteKey = randomString(30);
+            auto shortCode = randomString(5).toLower;
+            auto deleteKey = randomString(30).toLower;
             auto entry = Entry(shortCode, url, deleteKey);
             DB.insertEntry(&entry);
 

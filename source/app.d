@@ -1,5 +1,6 @@
 import vibe.d;
 import database;
+import shoxyserver;
 
 shared static this()
 {
@@ -10,7 +11,7 @@ shared static this()
             "shoxy_user", "shoxy_pass", "shoxy");
     auto DB = new Database(DBSettings);
 
-    /*
+
     auto shoxyServer = new ShoxyServer(new Database(DBSettings), "xn--zce.tv");
     logInfo("Created Server instance...");
 
@@ -21,5 +22,5 @@ shared static this()
     router.post("/", &shoxyServer.postURLRequest);
 
     listenHTTP(settings, router);
-    logInfo("Now listening on http://%s:%d", "localhost", settings.port);*/
+    logInfo("Now listening on http://%s:%d", "localhost", settings.port);
 }

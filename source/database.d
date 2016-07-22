@@ -107,7 +107,7 @@ class Database
             //static assert (columns.length == values.length);
 
 
-            string query = mixin(`"SELECT * FROM 'entries' WHERE `~column~` = %s"`).format(value); 
+            string query = mixin(`"SELECT * FROM entries WHERE `~column~` = '%s'"`).format(value); 
 
             auto command = new Command(conn, query);
             auto result = command.execSQLResult();
@@ -126,19 +126,19 @@ class Database
 
         void insertEntry(Entry* entry)
         {
-            string query = "INSERT INTO entries(short_code, url, delete_key) VALUES (%s, %s, %s)"
+            string query = "INSERT INTO entries(short_code, url, delete_key) VALUES ('%s', '%s', '%s')"
                 .format(entry.shortCode, entry.url, entry.deleteKey);
             auto command = new Command(conn, query);
             command.execSQL();
         }
 
-        void deleteEntry(Entry entry)
+        void deleteEntry(long id)
             in { 
-                enforce(entry.id > 0);
+                enforce(id > 0);
             }
 
         body {
-            string query = "DELETE FROM entries WHERE id = %d".format(entry.id);
+            string query = "DELETE FROM entries WHERE id = %d".format(id);
             auto command = new Command(conn, query);
             command.execSQL();
         }

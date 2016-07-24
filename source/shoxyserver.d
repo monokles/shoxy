@@ -171,7 +171,7 @@ class ShoxyServer
 
         void deleteURLRequest(HTTPServerRequest req, HTTPServerResponse res)
         {
-            auto deleteKey = req.json["key"].get!string;
+            auto deleteKey = req.json["deleteKey"].get!string;
 
             if(!isAllowedString(deleteKey)) {
                 res.statusCode = HTTPStatus.badRequest;
@@ -182,11 +182,11 @@ class ShoxyServer
             auto entry = DB.getBy!"delete_key"(deleteKey);
             if(entry.length > 0) {
                 DB.deleteEntry(entry[0].id);
+                res.render!("deleted.dt");
                 return;
             } 
 
-            res.statusCode = HTTPStatus.badRequest;
-            res.statusPhrase = "Key not found";
+            writeBadRequest("Key not found", res);
         }
 
         void getURLRequest(HTTPServerRequest req, HTTPServerResponse res)

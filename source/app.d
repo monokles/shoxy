@@ -20,7 +20,7 @@ shared static this()
     auto router         = new URLRouter;
     router.get("/", &shoxyServer.showIndex);
     router.get("/:shortCode", &shoxyServer.getURLRequest);
-    router.delete_("/:deleteKey", &shoxyServer.deleteURLRequest);
+    router.delete_("/", &shoxyServer.deleteURLRequest);
     router.post("/", &shoxyServer.postURLRequest);
 
     listenHTTP(settings, router);

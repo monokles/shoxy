@@ -1,0 +1,5 @@
+html
+    head 
+        title Successfully deleted!
+    body
+        h1 Successfully deleted!

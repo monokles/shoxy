@@ -16,14 +16,23 @@ class ShoxyServer
 
         bool isRealUrl(string url)
         {
-
-            auto streamedReq = requestHTTP(url);
-            if(!streamedReq.statusCode || (streamedReq.statusCode == 404)) {
-                return false;
+            auto ret = true;
+            try
+            {
+                requestHTTP(url, null, 
+                        (scope res) {
+                            if(!res.statusCode || (res.statusCode == 404)) {
+                                ret = false;
+                            }
+                        });
             }
-            return true;
+            catch(Exception e)
+            {
+                ret = false;
+            }
+            return ret;
         } unittest {
-            assert(isRealUrl("kernel.org"));
+            assert(isrealurl("kernel.org"));
             assert(isRealUrl("http://kernel.org"));
             assert(!isRealUrl("abc!"));
             assert(!isRealUrl("notValid"));

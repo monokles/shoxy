@@ -96,6 +96,14 @@ class ShoxyServer
             return result;
         }
 
+        void writeBadRequest(string statusPhrase, HTTPServerResponse res)
+        {
+            res.statusCode      = HTTPStatus.badRequest;
+            res.statusPhrase    = statusPhrase;
+            res.writeBody("", res.statusCode);
+            return;
+        }
+
 
     public:
         this(Database  DB, string serverURL)
@@ -111,25 +119,23 @@ class ShoxyServer
 
         void postURLRequest(HTTPServerRequest req, HTTPServerResponse res)
         {
-            auto url = req.json["url"].get!string;
-
-            if(!url) {
-                res.statusCode      = HTTPStatus.badRequest;
-                res.statusPhrase    = "No 'url' parameter found";
+            string url = null;
+            try {
+                url = req.json["url"].get!string;
+            } catch (JSONException e) {
+                writeBadRequest("No 'url' parameter found", res);
                 return;
             }
 
             if(!isAllowedString(url)) {
-                res.statusCode      = HTTPStatus.badRequest;
-                res.statusPhrase    = "URL string is not allowed";
+                writeBadRequest("URL string is not allowed", res);
                 return;
             }
 
+            //Check if URL is real
             url = prependHTTP(url);
-
             if(!isRealUrl(url)) {
-                res.statusCode      = HTTPStatus.badRequest;
-                res.statusPhrase    = "Not a real URL";
+                writeBadRequest("Not a real URL", res);
                 return;
             }
 

@@ -117,7 +117,7 @@ class ShoxyServer
             {
                 res.statusCode = HTTPStatus.found;
                 Json[string] json;
-                json["url"] = existingEntries[0].shortCode;
+                json["url"] = serverURL ~ "/" ~ existingEntries[0].shortCode;
                 res.writeJsonBody(json);
                 return;
             }

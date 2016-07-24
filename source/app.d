@@ -1,11 +1,17 @@
 import vibe.d;
+import database;
+import shoxyserver;
 
 shared static this()
 {
     auto settings = new HTTPServerSettings;
     settings.port = 5050;
 
-    auto DBsettings  = new HTTPServerSettings;
+    auto DBSettings  = new DatabaseSettings( "127.0.0.1", 3306, 
+            "shoxy_user", "shoxy_pass", "shoxy");
+    auto DB = new Database(DBSettings);
+
+
     auto shoxyServer = new ShoxyServer(new Database(DBSettings), "xn--zce.tv");
     logInfo("Created Server instance...");
 

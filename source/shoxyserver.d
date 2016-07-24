@@ -9,31 +9,31 @@ class ShoxyServer
     private:
         Database DB;
         string serverURL;
-        string allowedChars = letters ~ digits ~ "_-";
 
-        bool isRealUrl(string URL)
+        const string  allowedStringChars   = letters ~ digits;
+        const string  allowedURLChars      = "_-./:";
+        const string  allowedChars         = allowedStringChars ~ allowedURLChars;
+
+        bool isRealUrl(string url)
         {
-            if(!isAllowedString(URL)) {
-                return false;
-            }
 
-            auto streamedReq = requestHTTP(target);
+            auto streamedReq = requestHTTP(url);
             if(!streamedReq.statusCode || (streamedReq.statusCode == 404)) {
                 return false;
             }
             return true;
         } unittest {
-            assert(isRealURL("kernel.org"));
-            assert(isRealURL("http://kernel.org"));
-            assert(!isRealURL("abc!"));
-            assert(!isRealURL("notValid"));
-            assert(!isRealURL("Thisisnotavaliddomain.com"));
+            assert(isRealUrl("kernel.org"));
+            assert(isRealUrl("http://kernel.org"));
+            assert(!isRealUrl("abc!"));
+            assert(!isRealUrl("notValid"));
+            assert(!isRealUrl("Thisisnotavaliddomain.com"));
         }
 
         bool isAllowedString(string s)
         {
             foreach(c; s) {
-                if(!allowedChars.contains(c))
+                if(allowedChars.indexOf(c) < 0)
                     return false;
             }
             return true;
@@ -41,7 +41,7 @@ class ShoxyServer
             assert(isAllowedString("abc"))
             assert(!isAllowedString("ab\x10"))
             assert(!isAllowedString(""))
-            auto badChars = "!@#$%^&*(){}/><\\/.,';`~|*";
+            auto badChars = "!@#$%^&*(){}><\\/,';`~|*";
             foreach(c; badChars) {
                 assert(!isAllowedString(c));
             }
@@ -49,7 +49,7 @@ class ShoxyServer
 
         void proxyRequest(string url, HTTPServerResponse res)
         {
-            auto proxiedReq     = requestHTTP(target);
+            auto proxiedReq     = requestHTTP(url);
             res.httpVersion     = proxiedReq.httpVersion;
             res.headers         = proxiedReq.headers;
             res.statusCode      = proxiedReq.statusCode;
@@ -66,13 +66,13 @@ class ShoxyServer
         in {
             assert(length > 0);
         } out (result) {
-            assert(result.length = length);
+            assert(result.length == length);
         } body {
 
             string result = "";
-            for(auto i = 0; i <= length; ++i)
+            for(auto i = 0; i < length; ++i)
             {
-                result ~= allowedChars[uniform(0, allowedChars.length)];
+                result ~= allowedStringChars[uniform(0, allowedStringChars.length)];
             }
 
             return result;
@@ -93,27 +93,39 @@ class ShoxyServer
 
         void postURLRequest(HTTPServerRequest req, HTTPServerResponse res)
         {
-            auto url = req.json["url"];
+            auto url = req.json["url"].get!string;
 
-            if(!url || !isRealUrl(url)) {
-                res.statusCode     = HTTPStatus.badRequest;
-                res.statusPhrase = url? "URL does not exist" : "Bad URL param";
+            if(!url) {
+                res.statusCode      = HTTPStatus.badRequest;
+                res.statusPhrase    = "No 'url' parameter found";
+                return;
+            }
+            if(!isAllowedString(url)) {
+                res.statusCode      = HTTPStatus.badRequest;
+                res.statusPhrase    = "URL string is not allowed";
+                return;
+            }
+            if(!isRealUrl(url)) {
+                res.statusCode      = HTTPStatus.badRequest;
+                res.statusPhrase    = "Not a real URL";
                 return;
             }
 
-            if(DB.getBy!"url"(url)) 
+            //If already exists in DB, return shortCode of first match
+            auto existingEntries = DB.getBy!"url"(url);
+            if(existingEntries.length > 0) 
             {
                 res.statusCode = HTTPStatus.found;
                 Json[string] json;
-                json["url"] = DB.getBy!"url"(url).shortCode;
+                json["url"] = existingEntries[0].shortCode;
                 res.writeJsonBody(json);
                 return;
             }
 
-            auto shortCode = randomString(5);
-            auto deleteKey = randomString(30);
-            auto entry = DatabaseEntry(shortCode, deleteKey, url);
-            DB.insertEntry(entry);
+            auto shortCode = randomString(5).toLower;
+            auto deleteKey = randomString(30).toLower;
+            auto entry = Entry(shortCode, url, deleteKey);
+            DB.insertEntry(&entry);
 
             Json[string] json;
             json["url"] = serverURL ~ "/" ~ shortCode;
@@ -123,7 +135,7 @@ class ShoxyServer
 
         void deleteURLRequest(HTTPServerRequest req, HTTPServerResponse res)
         {
-            auto deleteKey = req.json["key"];
+            auto deleteKey = req.json["key"].get!string;
 
             if(!isAllowedString(deleteKey)) {
                 res.statusCode = HTTPStatus.badRequest;
@@ -131,9 +143,9 @@ class ShoxyServer
                 return;
             }
 
-            auto entry = DB.getBy!"deleteKey"(deleteKey);
-            if(entry) {
-                DB.dropEntry(entry);
+            auto entry = DB.getBy!"delete_key"(deleteKey);
+            if(entry.length > 0) {
+                DB.deleteEntry(entry[0].id);
                 return;
             } 
 
@@ -145,9 +157,9 @@ class ShoxyServer
         {
             auto shortCode = req.params["shortCode"];
 
-            auto entry = DB.getBy!"shortCode"(shortCode);
-            if(entry) {
-                proxyRequest(entry.url, res);
+            auto entry = DB.getBy!"short_code"(shortCode);
+            if(entry.length > 0) {
+                proxyRequest(entry[0].url, res);
                 return;
             } 
 

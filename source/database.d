@@ -1,6 +1,12 @@
-struct DatabaseEntry
+import mysql.connection;
+import std.stdio;
+import vibe.d;
+import std.format;
+
+
+struct Entry
 {
-    long id; 
+    immutable long id; 
     string shortCode; 
     string url; 
     string deleteKey; 
@@ -11,53 +17,151 @@ struct DatabaseEntry
         this.url        = url;
         this.deleteKey  = deleteKey;
     }
+
+    this(long id, string shortCode, string url, string deleteKey)
+    {
+        this.id  = id;
+        this.shortCode  = shortCode;
+        this.url        = url;
+        this.deleteKey  = deleteKey;
+    }
 }
 
-struct DatabaseSettings
+class DatabaseSettings
 {
-    string URL; 
-    ushort port; 
-    string user; 
-    string password; 
+    public:
+        immutable string host; 
+        immutable ushort port; 
+        immutable string user; 
+        immutable string password; 
+        immutable string database; 
+
+        this(string host, ushort port, string user, string password, string database) 
+        {
+            this.host = host;
+            this.port = port;
+            this.user = user;
+            this.password = password;
+            this.database = database;
+        }
 }
 
 private string Schema = 
-//TODO create schema based on structs
 """
-ADD TABLE 'Shoxy' COLUMNS
-yaddayadaa
+CREATE TABLE IF NOT EXISTS entries (
+    id              BIGINT        NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    short_code      VARCHAR(10)   NOT NULL,
+    url             VARCHAR(200)  NOT NULL,
+    delete_key      CHAR(30)      NOT NULL,
+    create_datetime DATETIME      DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE INDEX (short_code),
+    UNIQUE INDEX (delete_key)
+)
 """;
 
 class Database
 {
     private:
         DatabaseSettings settings;
+        Connection conn;
 
         void connect()
         {
+            string connStr = "host=%s;port=%d;user=%s;pwd=%s;db=%s"
+                .format(settings.host, settings.port, 
+                        settings.user, settings.password, settings.database);
+            conn = new Connection(connStr);
+        }
+
+        bool DBExists() {
+            string query = "SHOW TABLES";
+            auto command = new Command(conn, query);
+            auto result = command.execSQLResult();
+            bool exists = !(result.length == 0);
+            if(exists) {
+                logInfo("Database schema found.");
+            } else {
+                logInfo("Database schema not found.");
+            }
+            return exists;
         }
 
         void createDB()
         {
+            auto command = new Command(conn, Schema);
+            command.execSQL();
+            logInfo("Database tables created!");
         }
 
     public:
-        this(Databasesettings settings)
+        this(DatabaseSettings settings)
         {
-            this.settings = settings
+            this.settings = settings;
+            connect();
+            if(!DBExists()) {
+                createDB();
+            }
         }
 
-        DatabaseEntry getBy(string column)(string value)
-        {
-            auto query = "SELECT * WHERE "~column~" = "~value~";";
+        Entry*[] getBy(string column)(string value) {
+            //static assert (columns.length == values.length);
+
+
+            string query = mixin(`"SELECT * FROM entries WHERE `~column~` = '%s'"`).format(value); 
+
+            auto command = new Command(conn, query);
+            auto result = command.execSQLResult();
+
+            Entry*[] entries;
+            foreach (r; result) {
+                auto id        = r[0].peek!long;
+                auto shortCode = r[1].peek!string;
+                auto url       = r[2].peek!string;
+                auto deleteKey = r[3].peek!string;
+                entries ~= new Entry(*id, *shortCode, *url, *deleteKey);
+            }
+
+            return entries;
         }
 
-        void insertEntry()
+        void insertEntry(Entry* entry)
         {
+            string query = "INSERT INTO entries(short_code, url, delete_key) VALUES ('%s', '%s', '%s')"
+                .format(entry.shortCode, entry.url, entry.deleteKey);
+            auto command = new Command(conn, query);
+            command.execSQL();
         }
 
-        void deleteEntry(DatabaseEntry entry)
+        void deleteEntry(long id)
+            in { 
+                enforce(id > 0);
+            }
+
+        body {
+            string query = "DELETE FROM entries WHERE id = %d".format(id);
+            auto command = new Command(conn, query);
+            command.execSQL();
+        }
+
+        //very basic testing
+        unittest
         {
-            auto query = "DELETE FROM Shoxy WHERE "~column~" = "~value~";";
+            auto settings = new DatabaseSettings("localhost", 3306, 
+                    "shoxy_user", "shoxy_pass", "shoxy");
+
+            auto DB = new Database(settings);
+
+            //Make sure testcase data doesn't get stored to disk
+            (new Command(DB.conn, "SET autocommit = 0")).execSQL();
+
+            auto entry = new Entry("bla", "google.com" , "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+            DB.insertEntry(entry);
+            auto result = DB.getBy!"short_code"("bla");
+            assert(result.url == "google.com");
+            DB.deleteEntry(result);
+
+            (new Command(DB.conn, "ROLLBACK")).execSQL();
+            (new Command(DB.conn, "SET autocommit = 1")).execSQL();
         }
 }
+

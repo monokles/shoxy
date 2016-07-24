@@ -10,7 +10,7 @@ class ShoxyServer
     private:
         Database DB;
         ShoxyServerSettings settings;
-        string serverURL;
+        string urlString;
 
         const string  allowedStringChars   = letters ~ digits;
         const string  allowedURLChars      = "_-./:";
@@ -113,7 +113,8 @@ class ShoxyServer
         this(ShoxyServerSettings settings)
         {
             this.settings = settings;
-            this.serverURL = settings.url;
+            auto portString = settings.port != 80? ":" ~ settings.port.to!string : "";
+            this.urlString = settings.url ~ portString;
 
             auto dbSettings = new DatabaseSettings(settings.dbHost, settings.dbPort, settings.dbUser, settings.dbPassword, settings.dbName);
             this.DB = new Database(dbSettings);
@@ -152,7 +153,7 @@ class ShoxyServer
             {
                 res.statusCode = HTTPStatus.found;
                 Json[string] json;
-                json["url"] = serverURL ~ "/" ~ existingEntries[0].shortCode;
+                json["url"] = urlString ~ "/" ~ existingEntries[0].shortCode;
                 res.writeJsonBody(json);
                 return;
             }
@@ -163,7 +164,7 @@ class ShoxyServer
             DB.insertEntry(&entry);
 
             Json[string] json;
-            json["url"] = serverURL ~ "/" ~ shortCode;
+            json["url"] = urlString ~ "/" ~ shortCode;
             json["deleteKey"] = deleteKey;
             res.writeJsonBody(json);
         } 

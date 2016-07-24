@@ -32,11 +32,12 @@ class ShoxyServer
             }
             return ret;
         } unittest {
-            assert(isrealurl("kernel.org"));
-            assert(isRealUrl("http://kernel.org"));
-            assert(!isRealUrl("abc!"));
-            assert(!isRealUrl("notValid"));
-            assert(!isRealUrl("Thisisnotavaliddomain.com"));
+            ShoxyServer a = new ShoxyServer(null, "bla");
+            assert(a.isRealUrl("kernel.org"));
+            assert(a.isRealUrl("http://kernel.org"));
+            assert(!a.isRealUrl("abc!"));
+            assert(!a.isRealUrl("notValid"));
+            assert(!a.isRealUrl("Thisisnotavaliddomain.com"));
         }
 
         string prependHTTP(string url)
@@ -56,12 +57,13 @@ class ShoxyServer
             }
             return true;
         } unittest {
-            assert(isAllowedString("abc"))
-            assert(!isAllowedString("ab\x10"))
-            assert(!isAllowedString(""))
+            ShoxyServer a = new ShoxyServer(null, "bla");
+            assert(a.isAllowedString("abc"));
+            assert(!a.isAllowedString("ab\x10"));
+            assert(!a.isAllowedString(""));
             auto badChars = "!@#$%^&*(){}><\\/,';`~|*";
             foreach(c; badChars) {
-                assert(!isAllowedString(c));
+                assert(!a.isAllowedString(c.to!string));
             }
         }
 

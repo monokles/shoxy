@@ -156,9 +156,9 @@ class Database
 
             auto entry = new Entry("bla", "google.com" , "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
             DB.insertEntry(entry);
-            auto result = DB.getBy!"short_code"("bla");
+            auto result = DB.getBy!"short_code"("bla")[0];
             assert(result.url == "google.com");
-            DB.deleteEntry(result);
+            DB.deleteEntry(result.id);
 
             (new Command(DB.conn, "ROLLBACK")).execSQL();
             (new Command(DB.conn, "SET autocommit = 1")).execSQL();

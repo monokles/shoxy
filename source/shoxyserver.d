@@ -44,7 +44,8 @@ class ShoxyServer
 
         string prependHTTP(string url)
         {
-            if(!url.startsWith("http")) {
+            if(!url.startsWith("http://")
+                    && !url.startsWith("https://")) {
                 return "http://" ~ url;
             }
             return url;
@@ -69,13 +70,16 @@ class ShoxyServer
             }
         }
 
-        void proxyRequest(string url, HTTPServerResponse res)
+        void proxyResource(string url, HTTPServerResponse res)
         {
             auto proxiedReq     = requestHTTP(url);
             res.httpVersion     = proxiedReq.httpVersion;
             res.headers         = proxiedReq.headers;
             res.statusCode      = proxiedReq.statusCode;
             res.statusPhrase    = proxiedReq.statusPhrase;
+
+            //attempt to make browser display content (instead of showing a download promt)
+            res.headers.remove("content-disposition");
 
             while(proxiedReq.bodyReader.dataAvailableForRead) {
                 auto buf = new ubyte[proxiedReq.bodyReader.leastSize];
@@ -229,7 +233,7 @@ class ShoxyServer
 
             auto entry = DB.getBy!"short_code"(shortCode);
             if(entry.length > 0) {
-                proxyRequest(entry[0].url, res);
+                proxyResource(entry[0].url, res);
                 return;
             } 
 

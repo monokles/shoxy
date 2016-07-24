@@ -30,6 +30,15 @@ class ShoxyServer
             assert(!isRealUrl("Thisisnotavaliddomain.com"));
         }
 
+        string prependHTTP(string url)
+        {
+            if(!url.startsWith("http")) {
+                return "http://" ~ url;
+            }
+            return url;
+        }
+
+
         bool isAllowedString(string s)
         {
             foreach(c; s) {
@@ -100,11 +109,15 @@ class ShoxyServer
                 res.statusPhrase    = "No 'url' parameter found";
                 return;
             }
+
             if(!isAllowedString(url)) {
                 res.statusCode      = HTTPStatus.badRequest;
                 res.statusPhrase    = "URL string is not allowed";
                 return;
             }
+
+            url = prependHTTP(url);
+
             if(!isRealUrl(url)) {
                 res.statusCode      = HTTPStatus.badRequest;
                 res.statusPhrase    = "Not a real URL";

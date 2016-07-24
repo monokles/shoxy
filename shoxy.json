@@ -1,9 +1,16 @@
 {
     "url": "localhost", 
     "port": 5050, 
+
     "dbHost": "localhost",
     "dbPort": 3306,
     "dbName": "shoxy",
     "dbUser": "shoxy_user", 
-    "dbPassword": "shoxy_pass"
+    "dbPassword": "shoxy_pass",
+
+    
+    "allowVariableshortCodeLength": true,
+    "minShortcodeLength": 1,
+    "maxShortcodeLength": 10,
+    "defaultShortcodeLength": 5
 }

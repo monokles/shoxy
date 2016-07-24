@@ -108,6 +108,21 @@ class ShoxyServer
             return;
         }
 
+        string createUniqueValue(string column)(ushort length) 
+        {
+            ushort inc = 0;
+            ushort i = 0;
+            string value;
+            do
+            {
+                value = randomString(length + inc).toLower;
+                ++i;
+                inc += i % 10 == 0 ? 1 : 0;
+            } while(DB.getBy!column(value).length > 0);
+
+            return value;
+        }
+
 
     public:
         this(ShoxyServerSettings settings)
@@ -128,6 +143,9 @@ class ShoxyServer
         void postURLRequest(HTTPServerRequest req, HTTPServerResponse res)
         {
             string url = null;
+            ushort scLength = settings.defaultShortcodeLength;
+
+            //Validate url
             try {
                 url = req.json["url"].get!string;
             } catch (JSONException e) {
@@ -139,11 +157,22 @@ class ShoxyServer
                 writeBadRequest("URL string is not allowed", res);
                 return;
             }
-
             //Check if URL is real
             url = prependHTTP(url);
             if(!isRealUrl(url)) {
                 writeBadRequest("Not a real URL", res);
+                return;
+            }
+
+            //If length param exists, assign it
+            try {
+                scLength = req.json["length"].get!ushort;
+                if(scLength < settings.minShortcodeLength 
+                        || scLength >  settings.maxShortcodeLength) {
+                    scLength = settings.defaultShortcodeLength;
+                }
+
+            } catch (JSONException e) {
                 return;
             }
 
@@ -158,8 +187,9 @@ class ShoxyServer
                 return;
             }
 
-            auto shortCode = randomString(5).toLower;
-            auto deleteKey = randomString(30).toLower;
+            auto shortCode = createUniqueValue!"short_code"(scLength);
+            auto deleteKey = createUniqueValue!"delete_key"(30);
+
             auto entry = Entry(shortCode, url, deleteKey);
             DB.insertEntry(&entry);
 
@@ -174,8 +204,7 @@ class ShoxyServer
             auto deleteKey = req.json["deleteKey"].get!string;
 
             if(!isAllowedString(deleteKey)) {
-                res.statusCode = HTTPStatus.badRequest;
-                res.statusPhrase = "Bad key param";
+                writeBadRequest("Bad delete key", res);
                 return;
             }
 
@@ -192,6 +221,11 @@ class ShoxyServer
         void getURLRequest(HTTPServerRequest req, HTTPServerResponse res)
         {
             auto shortCode = req.params["shortCode"];
+
+            if(!isAllowedString(shortCode)) {
+                writeBadRequest("Bad shortcode", res);
+                return;
+            }
 
             auto entry = DB.getBy!"short_code"(shortCode);
             if(entry.length > 0) {

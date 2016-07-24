@@ -7,11 +7,18 @@ struct ShoxyServerSettings
 {
     string url;
     ushort port;
+
     string dbHost;
     ushort dbPort;
     string dbName;
     string dbUser;
     string dbPassword;
+
+    bool allowVariableshortCodeLength;
+    ushort minShortcodeLength;
+    ushort maxShortcodeLength;
+    ushort defaultShortcodeLength;;
+
 }
 
 class ShoxyServerConfig

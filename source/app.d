@@ -1,19 +1,20 @@
 import vibe.d;
 import database;
 import shoxyserver;
+import settings;
 
 shared static this()
 {
     auto settings = new HTTPServerSettings;
-    settings.port = 5050;
-    auto serverURL = "localhost:5050";
 
-    auto DBSettings  = new DatabaseSettings( "127.0.0.1", 3306, 
-            "shoxy_user", "shoxy_pass", "shoxy");
-    auto DB = new Database(DBSettings);
+    auto config = new ShoxyServerConfig("shoxy.json");
+    logInfo("Loaded config file...");
 
+    //copy relevant settings for vibe.d server
+    settings.port = config.settings.port;
+    settings.serverString = config.settings.url;
 
-    auto shoxyServer = new ShoxyServer(new Database(DBSettings), serverURL);
+    auto shoxyServer = new ShoxyServer(config.settings);
     logInfo("Created Server instance...");
 
     auto router         = new URLRouter;
@@ -23,5 +24,5 @@ shared static this()
     router.post("/", &shoxyServer.postURLRequest);
 
     listenHTTP(settings, router);
-    logInfo("Now listening on http://%s:%d", serverURL, settings.port);
+    logInfo("Now listening on http://%s:%d", config.settings.url, config.settings.port);
 }

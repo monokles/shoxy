@@ -1,0 +1,9 @@
+{
+    "url": "localhost", 
+    "port": 5050, 
+    "dbHost": "localhost",
+    "dbPort": 3306,
+    "dbName": "shoxy",
+    "dbUser": "shoxy_user", 
+    "dbPassword": "shoxy_pass"
+}

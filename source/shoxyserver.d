@@ -3,11 +3,13 @@ import vibe.data.json;
 import std.ascii;
 import std.random;
 import database;
+import settings;
 
 class ShoxyServer
 {
     private:
         Database DB;
+        ShoxyServerSettings settings;
         string serverURL;
 
         const string  allowedStringChars   = letters ~ digits;
@@ -108,10 +110,13 @@ class ShoxyServer
 
 
     public:
-        this(Database  DB, string serverURL)
+        this(ShoxyServerSettings settings)
         {
-            this.DB = DB;
-            this.serverURL = serverURL;
+            this.settings = settings;
+            this.serverURL = settings.url;
+
+            auto dbSettings = new DatabaseSettings(settings.dbHost, settings.dbPort, settings.dbUser, settings.dbPassword, settings.dbName);
+            this.DB = new Database(dbSettings);
         }
 
         void showIndex(HTTPServerRequest req, HTTPServerResponse res)

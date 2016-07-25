@@ -11,22 +11,25 @@ struct Entry
     string url; 
     string deleteKey; 
     int proxyType; 
+    string ownerIp; 
 
-    this(string shortCode, string url, string deleteKey, int proxyType)
+    this(string shortCode, string url, string deleteKey, int proxyType, string ownerIp)
     {
         this.shortCode  = shortCode;
         this.url        = url;
         this.deleteKey  = deleteKey;
         this.proxyType  = proxyType;
+        this.ownerIp    = ownerIp;
     }
 
-    this(long id, string shortCode, string url, string deleteKey, int proxyType)
+    this(long id, string shortCode, string url, string deleteKey, int proxyType, string ownerIp)
     {
         this.id  = id;
         this.shortCode  = shortCode;
         this.url        = url;
         this.deleteKey  = deleteKey;
         this.proxyType  = proxyType;
+        this.ownerIp    = ownerIp;
     }
 }
 
@@ -123,7 +126,8 @@ class Database
                 auto url            = (*r[2].peek!string).idup;
                 auto deleteKey      = (*r[3].peek!string).idup;
                 auto proxyType      = *r[4].peek!int;
-                entries ~= Entry(id, shortCode, url, deleteKey, proxyType);
+                auto ownerIp        = (*r[5].peek!string).idup;
+                entries ~= Entry(id, shortCode, url, deleteKey, proxyType, ownerIp);
             }
 
             return entries;
@@ -131,9 +135,9 @@ class Database
 
         void insertEntry(Entry* entry)
         {
-            string query = "INSERT INTO entries(short_code, url, delete_key, proxy_type) VALUES ('%s', '%s', '%s', %s)"
+            string query = "INSERT INTO entries(short_code, url, delete_key, proxy_type, owner_ip) VALUES ('%s', '%s', '%s', %s, '%s')"
                 .format(entry.shortCode, entry.url, entry.deleteKey, 
-                        entry.proxyType.to!string);
+                        entry.proxyType.to!string, entry.ownerIp);
             auto command = new Command(conn, query);
             command.execSQL();
         }

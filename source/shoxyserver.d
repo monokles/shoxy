@@ -189,10 +189,11 @@ class ShoxyServer
                 return;
             }
 
-            auto shortCode = createUniqueValue!"short_code"(scLength);
-            auto deleteKey = createUniqueValue!"delete_key"(30);
+            auto shortCode  = createUniqueValue!"short_code"(scLength);
+            auto deleteKey  = createUniqueValue!"delete_key"(30);
+            auto ip         = req.peer;
 
-            auto entry = Entry(shortCode, url, deleteKey, proxyResource);
+            auto entry = Entry(shortCode, url, deleteKey, proxyResource, ip);
             DB.insertEntry(&entry);
 
             Json[string] json;

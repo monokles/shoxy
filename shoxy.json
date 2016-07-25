@@ -12,5 +12,7 @@
     "allowVariableshortCodeLength": true,
     "minShortcodeLength": 1,
     "maxShortcodeLength": 10,
-    "defaultShortcodeLength": 5
+    "defaultShortcodeLength": 5,
+
+    "proxyResources": true
 }

@@ -16,31 +16,21 @@ class ShoxyServer
         const string  allowedURLChars      = "_-./:";
         const string  allowedChars         = allowedStringChars ~ allowedURLChars;
 
-        bool isRealUrl(string url)
+        string getContentType(string url)
         {
-            auto ret = true;
+            string ret = null;
             try
             {
                 requestHTTP(url, null, 
                         (scope res) {
-                            if(!res.statusCode || (res.statusCode == 404)) {
-                                ret = false;
+                            if(res.statusCode && (res.statusCode != 404)) {
+                                ret = res.headers.get("content-type");
                             }
                         });
-            }
-            catch(Exception e)
-            {
-                ret = false;
-            }
+            } catch(Exception e) { }
+
             return ret;
-        } unittest {
-            ShoxyServer a = new ShoxyServer(null, "bla");
-            assert(a.isRealUrl("kernel.org"));
-            assert(a.isRealUrl("http://kernel.org"));
-            assert(!a.isRealUrl("abc!"));
-            assert(!a.isRealUrl("notValid"));
-            assert(!a.isRealUrl("Thisisnotavaliddomain.com"));
-        }
+        } 
 
         string prependHTTP(string url)
         {
@@ -86,6 +76,7 @@ class ShoxyServer
                 proxiedReq.bodyReader.read(buf);
                 res.writeBody(buf);
             }
+
         }
 
         string randomString(int length)
@@ -161,12 +152,19 @@ class ShoxyServer
                 writeBadRequest("URL string is not allowed", res);
                 return;
             }
-            //Check if URL is real
+
+            //Check if URL is real and if so whether to proxy it
             url = prependHTTP(url);
-            if(!isRealUrl(url)) {
+            string contentType = getContentType(url);
+            bool proxyResource = false;
+            if(!contentType) {
                 writeBadRequest("Not a real URL", res);
                 return;
+            } else if (settings.proxyResources && 
+                    !contentType.startsWith("text")) {
+                proxyResource = true;
             }
+
 
             //If length param exists, assign it
             try {
@@ -194,7 +192,7 @@ class ShoxyServer
             auto shortCode = createUniqueValue!"short_code"(scLength);
             auto deleteKey = createUniqueValue!"delete_key"(30);
 
-            auto entry = Entry(shortCode, url, deleteKey);
+            auto entry = Entry(shortCode, url, deleteKey, proxyResource);
             DB.insertEntry(&entry);
 
             Json[string] json;
@@ -233,7 +231,11 @@ class ShoxyServer
 
             auto entry = DB.getBy!"short_code"(shortCode);
             if(entry.length > 0) {
-                proxyResource(entry[0].url, res);
+                if(entry[0].proxyType == 1) {
+                    proxyResource(entry[0].url, res);
+                } else {
+                    res.redirect(entry[0].url);
+                }
                 return;
             } 
 

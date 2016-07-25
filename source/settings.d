@@ -19,6 +19,7 @@ struct ShoxyServerSettings
     ushort maxShortcodeLength;
     ushort defaultShortcodeLength;;
 
+    bool proxyResources;
 }
 
 class ShoxyServerConfig

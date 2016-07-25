@@ -10,20 +10,23 @@ struct Entry
     string shortCode; 
     string url; 
     string deleteKey; 
+    int proxyType; 
 
-    this(string shortCode, string url, string deleteKey)
+    this(string shortCode, string url, string deleteKey, int proxyType)
     {
         this.shortCode  = shortCode;
         this.url        = url;
         this.deleteKey  = deleteKey;
+        this.proxyType  = proxyType;
     }
 
-    this(long id, string shortCode, string url, string deleteKey)
+    this(long id, string shortCode, string url, string deleteKey, int proxyType)
     {
         this.id  = id;
         this.shortCode  = shortCode;
         this.url        = url;
         this.deleteKey  = deleteKey;
+        this.proxyType  = proxyType;
     }
 }
 
@@ -53,6 +56,8 @@ CREATE TABLE IF NOT EXISTS entries (
     short_code      VARCHAR(10)   NOT NULL,
     url             VARCHAR(200)  NOT NULL,
     delete_key      CHAR(30)      NOT NULL,
+    proxy_type      INT           NOT NULL,
+    owner_ip        VARCHAR(30)   ,
     create_datetime DATETIME      DEFAULT CURRENT_TIMESTAMP,
     UNIQUE INDEX (short_code),
     UNIQUE INDEX (delete_key)
@@ -103,8 +108,7 @@ class Database
             }
         }
 
-        Entry*[] getBy(string column)(string value) {
-            //static assert (columns.length == values.length);
+        Entry[] getBy(string column)(string value) {
 
 
             string query = mixin(`"SELECT * FROM entries WHERE `~column~` = '%s'"`).format(value); 
@@ -112,13 +116,14 @@ class Database
             auto command = new Command(conn, query);
             auto result = command.execSQLResult();
 
-            Entry*[] entries;
+            Entry[] entries;
             foreach (r; result) {
-                auto id        = r[0].peek!long;
-                auto shortCode = r[1].peek!string;
-                auto url       = r[2].peek!string;
-                auto deleteKey = r[3].peek!string;
-                entries ~= new Entry(*id, *shortCode, *url, *deleteKey);
+                auto id             = *r[0].peek!long;
+                auto shortCode      = (*r[1].peek!string).idup;
+                auto url            = (*r[2].peek!string).idup;
+                auto deleteKey      = (*r[3].peek!string).idup;
+                auto proxyType      = *r[4].peek!int;
+                entries ~= Entry(id, shortCode, url, deleteKey, proxyType);
             }
 
             return entries;
@@ -126,8 +131,9 @@ class Database
 
         void insertEntry(Entry* entry)
         {
-            string query = "INSERT INTO entries(short_code, url, delete_key) VALUES ('%s', '%s', '%s')"
-                .format(entry.shortCode, entry.url, entry.deleteKey);
+            string query = "INSERT INTO entries(short_code, url, delete_key, proxy_type) VALUES ('%s', '%s', '%s', %s)"
+                .format(entry.shortCode, entry.url, entry.deleteKey, 
+                        entry.proxyType.to!string);
             auto command = new Command(conn, query);
             command.execSQL();
         }
@@ -136,32 +142,10 @@ class Database
             in { 
                 enforce(id > 0);
             }
-
         body {
             string query = "DELETE FROM entries WHERE id = %d".format(id);
             auto command = new Command(conn, query);
             command.execSQL();
-        }
-
-        //very basic testing
-        unittest
-        {
-            auto settings = new DatabaseSettings("localhost", 3306, 
-                    "shoxy_user", "shoxy_pass", "shoxy");
-
-            auto DB = new Database(settings);
-
-            //Make sure testcase data doesn't get stored to disk
-            (new Command(DB.conn, "SET autocommit = 0")).execSQL();
-
-            auto entry = new Entry("bla", "google.com" , "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-            DB.insertEntry(entry);
-            auto result = DB.getBy!"short_code"("bla")[0];
-            assert(result.url == "google.com");
-            DB.deleteEntry(result.id);
-
-            (new Command(DB.conn, "ROLLBACK")).execSQL();
-            (new Command(DB.conn, "SET autocommit = 1")).execSQL();
         }
 }
 

@@ -4,6 +4,8 @@ import std.ascii;
 import std.random;
 import database;
 import settings;
+import std.datetime;
+import std.typecons;
 
 class ShoxyServer
 {
@@ -193,8 +195,9 @@ class ShoxyServer
             auto shortCode  = createUniqueValue!"short_code"(scLength);
             auto deleteKey  = createUniqueValue!"delete_key"(30);
             auto ip         = req.peer;
+            Nullable!SysTime expireDateTime;
 
-            auto entry = Entry(shortCode, url, deleteKey, proxyResource, ip);
+            auto entry = Entry(shortCode, url, deleteKey, proxyResource, ip, expireDateTime);
             DB.insertEntry(&entry);
 
             Json[string] json;

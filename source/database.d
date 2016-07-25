@@ -2,6 +2,8 @@ import mysql.connection;
 import std.stdio;
 import vibe.d;
 import std.format;
+import std.datetime;
+import std.typecons;
 
 
 struct Entry
@@ -12,24 +14,31 @@ struct Entry
     string deleteKey; 
     int proxyType; 
     string ownerIp; 
+    Nullable!SysTime createDateTime; 
+    Nullable!SysTime expireDateTime; 
 
-    this(string shortCode, string url, string deleteKey, int proxyType, string ownerIp)
+    this(string shortCode, string url, string deleteKey, int proxyType, string ownerIp, 
+            Nullable!SysTime expireDateTime)
     {
-        this.shortCode  = shortCode;
-        this.url        = url;
-        this.deleteKey  = deleteKey;
-        this.proxyType  = proxyType;
-        this.ownerIp    = ownerIp;
+        this.shortCode          = shortCode;
+        this.url                = url;
+        this.deleteKey          = deleteKey;
+        this.proxyType          = proxyType;
+        this.ownerIp            = ownerIp;
+        this.expireDateTime     = expireDateTime;
     }
 
-    this(long id, string shortCode, string url, string deleteKey, int proxyType, string ownerIp)
+    this(long id, string shortCode, string url, string deleteKey, int proxyType, 
+            string ownerIp, Nullable!SysTime createDateTime, Nullable!SysTime expireDateTime)
     {
-        this.id  = id;
-        this.shortCode  = shortCode;
-        this.url        = url;
-        this.deleteKey  = deleteKey;
-        this.proxyType  = proxyType;
-        this.ownerIp    = ownerIp;
+        this.id                 = id;
+        this.shortCode          = shortCode;
+        this.url                = url;
+        this.deleteKey          = deleteKey;
+        this.proxyType          = proxyType;
+        this.ownerIp            = ownerIp;
+        this.createDateTime     = createDateTime;
+        this.expireDateTime     = expireDateTime;
     }
 }
 
@@ -62,6 +71,7 @@ CREATE TABLE IF NOT EXISTS entries (
     proxy_type      INT           NOT NULL,
     owner_ip        VARCHAR(30)   ,
     create_datetime DATETIME      DEFAULT CURRENT_TIMESTAMP,
+    expire_datetime DATETIME      ,
     UNIQUE INDEX (short_code),
     UNIQUE INDEX (delete_key)
 )
@@ -127,7 +137,13 @@ class Database
                 auto deleteKey      = r[3].coerce!string;
                 auto proxyType      = r[4].coerce!int;
                 auto ownerIp        = r[5].coerce!string;
-                entries ~= Entry(id, shortCode, url, deleteKey, proxyType, ownerIp);
+
+                Nullable!SysTime createDateTime = SysTime.fromSimpleString(r[6].coerce!string);
+                string expireString = r[7].coerce!string;
+                Nullable!SysTime expireDateTime = expireString == null? Nullable!SysTime.init: SysTime.fromSimpleString(expireString);
+
+                entries ~= Entry(id, shortCode, url, deleteKey, proxyType, 
+                        ownerIp, createDateTime, expireDateTime);
             }
 
             return entries;
@@ -135,9 +151,10 @@ class Database
 
         void insertEntry(Entry* entry)
         {
-            string query = "INSERT INTO entries(short_code, url, delete_key, proxy_type, owner_ip) VALUES ('%s', '%s', '%s', %s, '%s')"
+            auto expireDateTime = entry.expireDateTime.isNull? "NULL" : "'%s'".format(entry.expireDateTime.toSimpleString);
+            string query = "INSERT INTO entries(short_code, url, delete_key, proxy_type, owner_ip, expire_datetime) VALUES ('%s', '%s', '%s', %s, '%s', %s)"
                 .format(entry.shortCode, entry.url, entry.deleteKey, 
-                        entry.proxyType.to!string, entry.ownerIp);
+                        entry.proxyType.to!string, entry.ownerIp, expireDateTime);
             auto command = new Command(conn, query);
             command.execSQL();
         }

@@ -121,12 +121,12 @@ class Database
 
             Entry[] entries;
             foreach (r; result) {
-                auto id             = *r[0].peek!long;
-                auto shortCode      = (*r[1].peek!string).idup;
-                auto url            = (*r[2].peek!string).idup;
-                auto deleteKey      = (*r[3].peek!string).idup;
-                auto proxyType      = *r[4].peek!int;
-                auto ownerIp        = (*r[5].peek!string).idup;
+                auto id             = r[0].coerce!long;
+                auto shortCode      = r[1].coerce!string;
+                auto url            = r[2].coerce!string;
+                auto deleteKey      = r[3].coerce!string;
+                auto proxyType      = r[4].coerce!int;
+                auto ownerIp        = r[5].coerce!string;
                 entries ~= Entry(id, shortCode, url, deleteKey, proxyType, ownerIp);
             }
 

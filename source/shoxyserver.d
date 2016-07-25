@@ -113,6 +113,9 @@ class ShoxyServer
                 value = randomString(length + inc).toLower;
                 ++i;
                 inc += i % 10 == 0 ? 1 : 0;
+                if(length + inc > settings.maxShortcodeLength) {
+                    --inc;
+                }
             } while(DB.getBy!column(value).length > 0);
 
             return value;
@@ -174,9 +177,7 @@ class ShoxyServer
                     scLength = settings.defaultShortcodeLength;
                 }
 
-            } catch (JSONException e) {
-                return;
-            }
+            } catch (JSONException e) { }
 
             //If already exists in DB, return shortCode of first match
             auto existingEntries = DB.getBy!"url"(url);

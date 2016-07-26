@@ -20,6 +20,9 @@ struct ShoxyServerSettings
     ushort defaultShortcodeLength;;
 
     bool proxyResources;
+
+    string expirationPolicy;
+    string[string] expirationPolicySettings;;
 }
 
 class ShoxyServerConfig

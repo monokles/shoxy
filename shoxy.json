@@ -14,5 +14,8 @@
     "maxShortcodeLength": 10,
     "defaultShortcodeLength": 5,
 
-    "proxyResources": true
+    "proxyResources": true,
+
+    "expirationPolicy": "simple",
+    "expirationPolicySettings": { "expireAfter": "1d" }
 }

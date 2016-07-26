@@ -111,6 +111,12 @@ class Database
             logInfo("Database tables created!");
         }
 
+        string toSQLTimestamp(in SysTime t) @safe 
+        {
+            return "%04d-%02d-%02d %02d:%02d:%02d".format(
+                    t.year, t.month, t.day, t.hour, t.minute, t.second);
+        }
+
     public:
         this(DatabaseSettings settings)
         {
@@ -151,7 +157,8 @@ class Database
 
         void insertEntry(Entry* entry)
         {
-            auto expireDateTime = entry.expireDateTime.isNull? "NULL" : "'%s'".format(entry.expireDateTime.toSimpleString);
+            auto expireDateTime = entry.expireDateTime.isNull? 
+                "NULL" : "'%s'".format(toSQLTimestamp(entry.expireDateTime));
             string query = "INSERT INTO entries(short_code, url, delete_key, proxy_type, owner_ip, expire_datetime) VALUES ('%s', '%s', '%s', %s, '%s', %s)"
                 .format(entry.shortCode, entry.url, entry.deleteKey, 
                         entry.proxyType.to!string, entry.ownerIp, expireDateTime);

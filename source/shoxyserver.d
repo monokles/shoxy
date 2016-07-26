@@ -6,12 +6,15 @@ import database;
 import settings;
 import std.datetime;
 import std.typecons;
+import expirationpolicy;
+import simple;
 
 class ShoxyServer
 {
     private:
         Database DB;
         ShoxyServerSettings settings;
+        ExpirationPolicy policy;
         string urlString;
 
         const string  allowedStringChars   = letters ~ digits;
@@ -52,6 +55,7 @@ class ShoxyServer
             }
             return true;
         } unittest {
+            //BROKEN 
             ShoxyServer a = new ShoxyServer(null, "bla");
             assert(a.isAllowedString("abc"));
             assert(!a.isAllowedString("ab\x10"));
@@ -128,11 +132,16 @@ class ShoxyServer
         this(ShoxyServerSettings settings)
         {
             this.settings = settings;
-            auto portString = settings.port != 80? ":" ~ settings.port.to!string : "";
+            auto portString = canFind([80, 443], settings.port)? 
+                "" : ":" ~ settings.port.to!string;
             this.urlString = settings.url ~ portString;
 
             auto dbSettings = new DatabaseSettings(settings.dbHost, settings.dbPort, settings.dbUser, settings.dbPassword, settings.dbName);
             this.DB = new Database(dbSettings);
+
+            this.policy = ExpirationPolicy.GetPolicy(
+                    settings.expirationPolicy, 
+                    settings.expirationPolicySettings);
         }
 
         void showIndex(HTTPServerRequest req, HTTPServerResponse res)
@@ -195,10 +204,13 @@ class ShoxyServer
             auto shortCode  = createUniqueValue!"short_code"(scLength);
             auto deleteKey  = createUniqueValue!"delete_key"(30);
             auto ip         = req.peer;
-            Nullable!SysTime expireDateTime;
+            Nullable!SysTime expireDateTime = policy.initExpirationDateTime(req.json);
 
             auto entry = Entry(shortCode, url, deleteKey, proxyResource, ip, expireDateTime);
             DB.insertEntry(&entry);
+
+            logInfo("%s submitted %s as %s/%s", entry.ownerIp, 
+                    entry.url, urlString, entry.shortCode);
 
             Json[string] json;
             json["url"] = urlString ~ "/" ~ shortCode;

@@ -11,15 +11,22 @@ class SimpleExpirationPolicy  : ExpirationPolicy
 {
     private:
         string[string] settings;
+        bool useKey;
 
     public:
         this(string[string] settings)
         {
             this.settings = settings;
+            this.useKey = ("bypassKey" in settings) !is null;
         }
 
         Nullable!SysTime initExpirationDateTime(Json json)
         {
+            if(useKey && (json["bypassKey"].to!string) == (settings["bypassKey"]))
+            {
+                return Nullable!SysTime.init;
+            }
+
             Nullable!SysTime expTime = Clock.currTime;
             auto duration = durFromString(settings["expireAfter"]);
             expTime += duration;

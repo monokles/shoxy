@@ -67,16 +67,20 @@ class ShoxyServer
             }
         }
 
-        void proxyResource(string url, HTTPServerResponse res)
+        bool proxyResource(string url, HTTPServerResponse res)
         {
             auto proxiedReq     = requestHTTP(url);
+
+            //return false if resource is unacceptable
+            if(proxiedReq.statusCode == HTTPStatus.notFound
+                    || proxiedReq.headers.get("content-type").startsWith("text")) {
+                return false;
+            }
+
             res.httpVersion     = proxiedReq.httpVersion;
-            res.headers         = proxiedReq.headers;
             res.statusCode      = proxiedReq.statusCode;
             res.statusPhrase    = proxiedReq.statusPhrase;
 
-            //attempt to make browser display content (instead of showing a download promt)
-            res.headers.remove("content-disposition");
 
             while(proxiedReq.bodyReader.dataAvailableForRead) {
                 auto buf = new ubyte[proxiedReq.bodyReader.leastSize];
@@ -84,6 +88,7 @@ class ShoxyServer
                 res.writeBody(buf);
             }
 
+            return true;
         }
 
         string randomString(int length)
@@ -253,7 +258,12 @@ class ShoxyServer
             auto entry = DB.getBy!"short_code"(shortCode);
             if(entry.length > 0) {
                 if(entry[0].proxyType == 1) {
-                    proxyResource(entry[0].url, res);
+                    auto stillExists = proxyResource(entry[0].url, res);
+                    if(!stillExists) {
+                        logInfo("Deleting '%s'->'%s' due to 404 or bad content-type", entry[0].shortCode, entry[0].url);
+                        DB.deleteEntry(entry[0].id);
+                        res.statusCode = HTTPStatus.notFound;
+                    }
                 } else {
                     res.redirect(entry[0].url);
                 }

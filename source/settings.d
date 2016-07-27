@@ -22,6 +22,7 @@ struct ShoxyServerSettings
     bool proxyResources;
 
     string expirationPolicy;
+    string expireCheckInterval;
     string[string] expirationPolicySettings;;
 }
 

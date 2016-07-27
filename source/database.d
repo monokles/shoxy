@@ -175,5 +175,17 @@ class Database
             auto command = new Command(conn, query);
             command.execSQL();
         }
+
+        void deleteExpiredEntries()
+        {
+            //count amount of expired entries so we can log about it
+            string cntQ = "select count(*) from entries WHERE expire_datetime <= CURRENT_TIMESTAMP";
+            auto command = new Command(conn, cntQ);
+            auto amount = command.execSQLResult()[0][0].coerce!int;
+            string query = "DELETE FROM entries WHERE expire_datetime <= CURRENT_TIMESTAMP";
+            command = new Command(conn, query);
+            command.execSQL();
+            logInfo("Deleted %d expired entries from the database.", amount);
+        }
 }
 

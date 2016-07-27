@@ -17,5 +17,9 @@
     "proxyResources": true,
 
     "expirationPolicy": "simple",
-    "expirationPolicySettings": { "expireAfter": "1d" }
+    "expireCheckInterval": "15m",
+    "expirationPolicySettings": { 
+        "expireAfter": "1d",
+        "bypassKey": "password" 
+    }
 }

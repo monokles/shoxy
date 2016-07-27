@@ -8,6 +8,7 @@ import std.datetime;
 import std.typecons;
 import expirationpolicy;
 import simple;
+import util;
 
 class ShoxyServer
 {
@@ -142,6 +143,9 @@ class ShoxyServer
             this.policy = ExpirationPolicy.GetPolicy(
                     settings.expirationPolicy, 
                     settings.expirationPolicySettings);
+
+            auto expInterval = durFromString(settings.expireCheckInterval);
+            setTimer(expInterval, toDelegate(&DB.deleteExpiredEntries), true);
         }
 
         void showIndex(HTTPServerRequest req, HTTPServerResponse res)

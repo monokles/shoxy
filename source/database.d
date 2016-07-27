@@ -145,8 +145,11 @@ class Database
                 auto ownerIp        = r[5].coerce!string;
 
                 Nullable!SysTime createDateTime = SysTime.fromSimpleString(r[6].coerce!string);
-                string expireString = r[7].coerce!string;
-                Nullable!SysTime expireDateTime = expireString == null? Nullable!SysTime.init: SysTime.fromSimpleString(expireString);
+                string expireString = r.isNull(7)? null: r[7].coerce!string;
+                Nullable!SysTime expireDateTime;
+                if(expireString !is null) {
+                    expireDateTime = SysTime.fromSimpleString(expireString);
+                }
 
                 entries ~= Entry(id, shortCode, url, deleteKey, proxyType, 
                         ownerIp, createDateTime, expireDateTime);

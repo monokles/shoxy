@@ -85,7 +85,7 @@ class Database
 
         void connect()
         {
-            string connStr = "host=%s;port=%d;user=%s;pwd=%s;db=%s"
+            string connStr = "host = %s;port = %d;user = %s;pwd = %s;db = %s"
                 .format(settings.host, settings.port, 
                         settings.user, settings.password, settings.database);
             conn = new Connection(connStr);
@@ -95,7 +95,7 @@ class Database
             string query = "SHOW TABLES";
             auto command = new Command(conn, query);
             auto result = command.execSQLResult();
-            bool exists = !(result.length == 0);
+            bool exists = !(result.length  ==  0);
             if(exists) {
                 logInfo("Database schema found.");
             } else {
@@ -151,20 +151,36 @@ class Database
                     expireDateTime = SysTime.fromSimpleString(expireString);
                 }
 
-                entries ~= Entry(id, shortCode, url, deleteKey, proxyType, 
+                entries ~=  Entry(id, shortCode, url, deleteKey, proxyType, 
                         ownerIp, createDateTime, expireDateTime);
             }
 
             return entries;
         }
 
-        void insertEntry(Entry* entry)
+        void insertEntry(Entry entry)
         {
             auto expireDateTime = entry.expireDateTime.isNull? 
                 "NULL" : "'%s'".format(toSQLTimestamp(entry.expireDateTime));
             string query = "INSERT INTO entries(short_code, url, delete_key, proxy_type, owner_ip, expire_datetime) VALUES ('%s', '%s', '%s', %s, '%s', %s)"
                 .format(entry.shortCode, entry.url, entry.deleteKey, 
                         entry.proxyType.to!string, entry.ownerIp, expireDateTime);
+            auto command = new Command(conn, query);
+            command.execSQL();
+        }
+
+        void updateEntry(Entry entry) 
+        {
+            auto cDateTime = entry.createDateTime.isNull? 
+                "NULL" : "'%s'".format(toSQLTimestamp(entry.createDateTime));
+            auto eDateTime = entry.expireDateTime.isNull? 
+                "NULL" : "'%s'".format(toSQLTimestamp(entry.expireDateTime));
+
+            string query = "UPDATE entries SET short_code = '%s', url = '%s', delete_key = '%s', proxy_type = %d, owner_ip = '%s', create_datetime = %s, expire_datetime = %s WHERE id = %d".format(entry.shortCode, entry.url, entry.deleteKey, 
+                    entry.proxyType, entry.ownerIp, 
+                    cDateTime, eDateTime, entry.id);
+            logInfo(query);
+
             auto command = new Command(conn, query);
             command.execSQL();
         }
@@ -182,10 +198,10 @@ class Database
         void deleteExpiredEntries()
         {
             //count amount of expired entries so we can log about it
-            string cntQ = "select count(*) from entries WHERE expire_datetime <= CURRENT_TIMESTAMP";
+            string cntQ = "select count(*) from entries WHERE expire_datetime <=  CURRENT_TIMESTAMP";
             auto command = new Command(conn, cntQ);
             auto amount = command.execSQLResult()[0][0].coerce!int;
-            string query = "DELETE FROM entries WHERE expire_datetime <= CURRENT_TIMESTAMP";
+            string query = "DELETE FROM entries WHERE expire_datetime <=  CURRENT_TIMESTAMP";
             command = new Command(conn, query);
             command.execSQL();
             logInfo("Deleted %d expired entries from the database.", amount);

@@ -1,5 +1,4 @@
-import vibe.d;
-import vibe.data.json;
+import vibe.d; import vibe.data.json;
 import std.ascii;
 import std.random;
 import database;
@@ -18,9 +17,8 @@ class ShoxyServer
         ExpirationPolicy policy;
         string urlString;
 
-        const string  allowedStringChars   = letters ~ digits;
-        const string  allowedURLChars      = "_-./:";
-        const string  allowedChars         = allowedStringChars ~ allowedURLChars;
+        enum alphanumeric   = letters ~ digits;
+        enum  urlChars      = "%_-./:";
 
         string getContentType(string url)
         {
@@ -45,26 +43,6 @@ class ShoxyServer
                 return "http://" ~ url;
             }
             return url;
-        }
-
-
-        bool isAllowedString(string s)
-        {
-            foreach(c; s) {
-                if(allowedChars.indexOf(c) < 0)
-                    return false;
-            }
-            return true;
-        } unittest {
-            //BROKEN 
-            ShoxyServer a = new ShoxyServer(null, "bla");
-            assert(a.isAllowedString("abc"));
-            assert(!a.isAllowedString("ab\x10"));
-            assert(!a.isAllowedString(""));
-            auto badChars = "!@#$%^&*(){}><\\/,';`~|*";
-            foreach(c; badChars) {
-                assert(!a.isAllowedString(c.to!string));
-            }
         }
 
         bool proxyResource(string url, HTTPServerResponse res)
@@ -101,7 +79,7 @@ class ShoxyServer
             string result = "";
             for(auto i = 0; i < length; ++i)
             {
-                result ~= allowedStringChars[uniform(0, allowedStringChars.length)];
+                result ~= alphanumeric[uniform(0, alphanumeric.length)];
             }
 
             return result;
@@ -165,13 +143,14 @@ class ShoxyServer
 
             //Validate url
             try {
-                url = req.json["url"].get!string;
+                url = req.json["url"].get!string.urlDecode;
+                logInfo(url);
             } catch (JSONException e) {
                 writeBadRequest("No 'url' parameter found", res);
                 return;
             }
 
-            if(!isAllowedString(url)) {
+            if(!madeOf(url, alphanumeric ~ urlChars)) {
                 writeBadRequest("URL string is not allowed", res);
                 return;
             }
@@ -216,7 +195,7 @@ class ShoxyServer
             Nullable!SysTime expireDateTime = policy.initExpirationDateTime(req.json);
 
             auto entry = Entry(shortCode, url, deleteKey, proxyResource, ip, expireDateTime);
-            DB.insertEntry(&entry);
+            DB.insertEntry(entry);
 
             logInfo("%s submitted %s as %s/%s", entry.ownerIp, 
                     entry.url, urlString, entry.shortCode);
@@ -231,7 +210,7 @@ class ShoxyServer
         {
             auto deleteKey = req.json["deleteKey"].get!string;
 
-            if(!isAllowedString(deleteKey)) {
+            if(deleteKey.length != 30 || !madeOf(deleteKey, alphanumeric)) {
                 writeBadRequest("Bad delete key", res);
                 return;
             }
@@ -250,7 +229,7 @@ class ShoxyServer
         {
             auto shortCode = req.params["shortCode"];
 
-            if(!isAllowedString(shortCode)) {
+            if(!madeOf(shortCode, alphanumeric)) {
                 writeBadRequest("Bad shortcode", res);
                 return;
             }
@@ -263,10 +242,16 @@ class ShoxyServer
                         logInfo("Deleting '%s'->'%s' due to 404 or bad content-type", entry[0].shortCode, entry[0].url);
                         DB.deleteEntry(entry[0].id);
                         res.statusCode = HTTPStatus.notFound;
-                    }
+                    } 
                 } else {
                     res.redirect(entry[0].url);
                 }
+
+                //update entry if policy requests it
+                if(policy.updateExpirationDateTime(entry[0])) {
+                    DB.updateEntry(entry[0]);
+                }
+
                 return;
             } 
 

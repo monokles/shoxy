@@ -1,6 +1,19 @@
 import core.time;
 import std.array;
 import std.format;
+import std.string;
+
+/**
+ * Returns true if target consists only of chars in allowedChars
+ */
+bool madeOf(string target, string allowedChars)
+{
+    foreach(c; target) {
+        if(allowedChars.indexOf(c) < 0)
+            return false;
+    }
+    return true;
+}
 
 Duration durFromString(string duration)
 {

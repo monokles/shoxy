@@ -4,6 +4,7 @@ import vibe.data.json;
 import database;
 import std.uni;
 import simple;
+import lasthit;
 
 interface ExpirationPolicy
 {
@@ -23,12 +24,14 @@ interface ExpirationPolicy
      *
      * Returns true whenever the entry is modified, false otherwise.
      */
-    bool updateExpirationDateTime(Entry entry);
+    bool updateExpirationDateTime(ref Entry entry);
 
     static ExpirationPolicy GetPolicy(string policyName, string[string] policySettings)
     {
         switch(toLower(policyName))
         {
+            case "lasthit":
+                return new LastHitExpirationPolicy(policySettings);
             case "simple":
             default:
                 return new SimpleExpirationPolicy(policySettings);

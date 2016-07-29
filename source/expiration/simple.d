@@ -9,7 +9,7 @@ import util;
 
 class SimpleExpirationPolicy  : ExpirationPolicy
 {
-    private:
+    protected:
         string[string] settings;
         bool useKey;
 
@@ -33,7 +33,7 @@ class SimpleExpirationPolicy  : ExpirationPolicy
             return expTime;
         }
 
-        bool updateExpirationDateTime(Entry entry)
+        bool updateExpirationDateTime(ref Entry entry)
         {
             return false;
         }

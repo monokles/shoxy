@@ -15,7 +15,6 @@ class ShoxyServer
         Database DB;
         ShoxyServerSettings settings;
         ExpirationPolicy policy;
-        string urlString;
 
         enum alphanumeric   = letters ~ digits;
         enum  urlChars      = "%_-./:";
@@ -118,7 +117,6 @@ class ShoxyServer
             this.settings = settings;
             auto portString = canFind([80, 443], settings.port)? 
                 "" : ":" ~ settings.port.to!string;
-            this.urlString = settings.url ~ portString;
 
             auto dbSettings = new DatabaseSettings(settings.dbHost, settings.dbPort, settings.dbUser, settings.dbPassword, settings.dbName);
             this.DB = new Database(dbSettings);
@@ -183,7 +181,7 @@ class ShoxyServer
             {
                 res.statusCode = HTTPStatus.found;
                 Json[string] json;
-                json["url"] = urlString ~ "/" ~ existingEntries[0].shortCode;
+                json["url"] = settings.url ~ "/" ~ existingEntries[0].shortCode;
                 res.writeJsonBody(json);
                 return;
             }
@@ -197,10 +195,10 @@ class ShoxyServer
             DB.insertEntry(entry);
 
             logInfo("%s submitted %s as %s/%s", entry.ownerIp, 
-                    entry.url, urlString, entry.shortCode);
+                    entry.url, settings.url, entry.shortCode);
 
             Json[string] json;
-            json["url"] = urlString ~ "/" ~ shortCode;
+            json["url"] = settings.url ~ "/" ~ shortCode;
             json["deleteKey"] = deleteKey;
             res.writeJsonBody(json);
         } 

@@ -12,7 +12,6 @@ shared static this()
 
     //copy relevant settings for vibe.d server
     settings.port = config.settings.port;
-    settings.serverString = config.settings.url;
 
     auto shoxyServer = new ShoxyServer(config.settings);
     logInfo("Created Server instance...");

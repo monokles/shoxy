@@ -144,7 +144,6 @@ class ShoxyServer
             //Validate url
             try {
                 url = req.json["url"].get!string.urlDecode;
-                logInfo(url);
             } catch (JSONException e) {
                 writeBadRequest("No 'url' parameter found", res);
                 return;

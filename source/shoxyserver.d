@@ -57,6 +57,7 @@ class ShoxyServer
             res.httpVersion     = proxiedReq.httpVersion;
             res.statusCode      = proxiedReq.statusCode;
             res.statusPhrase    = proxiedReq.statusPhrase;
+            res.headers["content-type"] = proxiedReq.headers.get("content-type");
 
 
             while(proxiedReq.bodyReader.dataAvailableForRead) {

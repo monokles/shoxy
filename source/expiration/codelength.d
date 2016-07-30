@@ -1,4 +1,5 @@
 import vibe.data.json;
+import core.time;
 import std.datetime;
 import std.typecons;
 import std.array;
@@ -13,8 +14,9 @@ class CodeLengthExpirationPolicy  : ExpirationPolicy
         Nullable!SysTime calculateExpirationTime(ulong codeLength)
         {
             Nullable!SysTime expTime = Clock.currTime;
-            auto expirationHours = (codeLength * 26) - 20;
-            expTime.roll!"hours"(expirationHours);
+            auto expirationHours = (codeLength * 26) - 25;
+            
+            expTime += dur!"hours"(expirationHours);
             
             return expTime;
         }

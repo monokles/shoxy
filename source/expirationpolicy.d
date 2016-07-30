@@ -5,18 +5,21 @@ import database;
 import std.uni;
 import simple;
 import lasthit;
+import codelength;
 
 interface ExpirationPolicy
 {
     /**
-     * Returns the initial expiration datetime for new entries.
+     * Initializes the expiration time for a given entry and its
+     * corresponding request.
+     * The relevant request's json and entry are passed as
+     * parameters, as to allow policies to implement custom 
+     * post parameters.
      * 
-     * the relevant request's json is passed as a parameter, as to 
-     * allow policies to implement custom post parameters.
-     * Returns Null if this is infinite;
+     * Returns true if the entry was changed, otherwise false.
      * 
      */
-    Nullable!SysTime initExpirationDateTime(Json json);
+    bool initExpirationDateTime(Json json, ref Entry entry);
 
     /**
      * Gets called whenever the entry gets requested by a client.
@@ -32,6 +35,8 @@ interface ExpirationPolicy
         {
             case "lasthit":
                 return new LastHitExpirationPolicy(policySettings);
+            case "codelength":
+                return new CodeLengthExpirationPolicy(policySettings);
             case "simple":
             default:
                 return new SimpleExpirationPolicy(policySettings);

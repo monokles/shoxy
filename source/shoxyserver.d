@@ -189,9 +189,9 @@ class ShoxyServer
             auto shortCode  = createUniqueValue!"short_code"(scLength);
             auto deleteKey  = createUniqueValue!"delete_key"(30);
             auto ip         = req.peer;
-            Nullable!SysTime expireDateTime = policy.initExpirationDateTime(req.json);
-
-            auto entry = Entry(shortCode, url, deleteKey, proxyResource, ip, expireDateTime);
+            auto entry = Entry(shortCode, url, deleteKey, proxyResource, ip, Nullable!SysTime.init);
+            policy.initExpirationDateTime(req.json, entry);
+            
             DB.insertEntry(entry);
 
             logInfo("%s submitted %s as %s/%s", entry.ownerIp, 

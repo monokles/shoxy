@@ -20,17 +20,19 @@ class SimpleExpirationPolicy  : ExpirationPolicy
             this.useKey = ("bypassKey" in settings) !is null;
         }
 
-        Nullable!SysTime initExpirationDateTime(Json json)
+        bool initExpirationDateTime(Json json, ref Entry entry)
         {
             if(useKey && (json["bypassKey"].to!string) == (settings["bypassKey"]))
             {
-                return Nullable!SysTime.init;
+                return false;
             }
 
             Nullable!SysTime expTime = Clock.currTime;
             auto duration = durFromString(settings["expireAfter"]);
             expTime += duration;
-            return expTime;
+            entry.expireDateTime = expTime;
+            
+            return true;
         }
 
         bool updateExpirationDateTime(ref Entry entry)

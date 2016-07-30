@@ -14,7 +14,7 @@ class CodeLengthExpirationPolicy  : ExpirationPolicy
         Nullable!SysTime calculateExpirationTime(ulong codeLength)
         {
             Nullable!SysTime expTime = Clock.currTime;
-            auto expirationHours = (codeLength * 26) - 25;
+            auto expirationHours = (codeLength * 14) - 12;
             
             expTime += dur!"hours"(expirationHours);
             

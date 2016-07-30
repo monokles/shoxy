@@ -17,7 +17,7 @@ class ShoxyServer
         ExpirationPolicy policy;
 
         enum alphanumeric   = letters ~ digits;
-        enum  urlChars      = "%_-./:";
+        enum  urlChars      = "%?=&_-./:";
 
         string getContentType(string url)
         {

@@ -1,4 +1,7 @@
-import vibe.d; import vibe.data.json;
+import vibe.d; 
+import vibe.data.json;
+import vibe.core.stream;
+import vibe.http.common;
 import std.ascii;
 import std.random;
 import database;
@@ -43,6 +46,11 @@ class ShoxyServer
             }
             return url;
         }
+        
+        void proxyBodyStream(InputStream stream, OutputStream output)
+        {
+            output.write(stream);
+        }
 
         bool proxyResource(string url, HTTPServerResponse res)
         {
@@ -58,17 +66,16 @@ class ShoxyServer
             res.statusCode      = proxiedReq.statusCode;
             res.statusPhrase    = proxiedReq.statusPhrase;
             res.headers["content-type"] = proxiedReq.headers.get("content-type");
-
-            while(!proxiedReq.bodyReader.empty)
+            
+            auto inputStream = proxiedReq.bodyReader;
+            auto outputStream = res.bodyWriter;
+            if ("transfer-encoding" in proxiedReq.headers)
             {
-                while(proxiedReq.bodyReader.dataAvailableForRead)
-                {
-                    auto buf = new ubyte[proxiedReq.bodyReader.leastSize];
-                    proxiedReq.bodyReader.read(buf);
-                    res.writeBody(buf);
-                }
+                res.headers["transfer-encoding"] = proxiedReq.headers.get("transfer-encoding");
             }
-
+            
+            proxyBodyStream(inputStream, outputStream);
+            
             return true;
         }
 

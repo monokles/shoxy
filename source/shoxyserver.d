@@ -60,7 +60,8 @@ class ShoxyServer
             res.headers["content-type"] = proxiedReq.headers.get("content-type");
 
 
-            while(proxiedReq.bodyReader.dataAvailableForRead) {
+            while(proxiedReq.bodyReader.dataAvailableForRead
+                  && !proxiedReq.bodyReader.empty) {
                 auto buf = new ubyte[proxiedReq.bodyReader.leastSize];
                 proxiedReq.bodyReader.read(buf);
                 res.writeBody(buf);

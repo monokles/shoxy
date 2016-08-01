@@ -33,13 +33,17 @@ class ShoxyServer
                                 ret = res.headers.get("content-type");
                             }
                         });
-            } catch(Exception e) { }
+            } catch(Exception e) { 
+                logInfo("getContentType failed for %s", url);
+                logInfo("%s", e.toString()); 
+            }
 
             return ret;
         } 
 
         string prependHTTP(string url)
         {
+            url = url.urlDecode;
             if(!url.startsWith("http://")
                     && !url.startsWith("https://")) {
                 return "http://" ~ url;
@@ -152,16 +156,16 @@ class ShoxyServer
 
             //Validate url
             try {
-                url = req.json["url"].get!string.urlDecode;
+                url = req.json["url"].get!string.urlEncode;
             } catch (JSONException e) {
                 writeBadRequest("No 'url' parameter found", res);
                 return;
             }
 
-            if(!madeOf(url, alphanumeric ~ urlChars)) {
+            /*(if(!madeOf(url, alphanumeric ~ urlChars)) {
                 writeBadRequest("URL string is not allowed", res);
                 return;
-            }
+            }*/
 
             //Check if URL is real and if so whether to proxy it
             url = prependHTTP(url);
@@ -173,6 +177,11 @@ class ShoxyServer
             } else if (settings.proxyResources && 
                     !contentType.startsWith("text")) {
                 proxyResource = true;
+            }
+
+            if(url.length >= 250) {
+                writeBadRequest("URL too long", res);
+                return;
             }
 
 

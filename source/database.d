@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS entries (
     id              BIGINT        NOT NULL AUTO_INCREMENT PRIMARY KEY,
     short_code      VARCHAR(10)   NOT NULL,
     url             VARCHAR(200)  NOT NULL,
-    delete_key      CHAR(30)      NOT NULL,
+    delete_key      CHAR(32)      NOT NULL,
     proxy_type      INT           NOT NULL,
     owner_ip        VARCHAR(30)   ,
     create_datetime DATETIME      DEFAULT CURRENT_TIMESTAMP,
@@ -130,19 +130,20 @@ class Database
         Entry[] getBy(string column)(string value) {
 
 
-            string query = mixin(`"SELECT * FROM entries WHERE `~column~` = '%s'"`).format(value); 
+            string query = mixin(`"SELECT * FROM entries WHERE `~column~` = QUOTE('%s')"`).format(value); 
 
             auto command = new Command(conn, query);
             auto result = command.execSQLResult();
 
             Entry[] entries;
+            import std.algorithm.mutation:strip;
             foreach (r; result) {
                 auto id             = r[0].coerce!long;
-                auto shortCode      = r[1].coerce!string;
-                auto url            = r[2].coerce!string;
-                auto deleteKey      = r[3].coerce!string;
+                auto shortCode      = r[1].coerce!string.strip('\'');
+                auto url            = r[2].coerce!string.strip('\'');
+                auto deleteKey      = r[3].coerce!string.strip('\'');
                 auto proxyType      = r[4].coerce!int;
-                auto ownerIp        = r[5].coerce!string;
+                auto ownerIp        = r[5].coerce!string.strip('\'');
 
                 Nullable!SysTime createDateTime = SysTime.fromSimpleString(r[6].coerce!string);
                 string expireString = r.isNull(7)? null: r[7].coerce!string;
@@ -162,7 +163,7 @@ class Database
         {
             auto expireDateTime = entry.expireDateTime.isNull? 
                 "NULL" : "'%s'".format(toSQLTimestamp(entry.expireDateTime));
-            string query = "INSERT INTO entries(short_code, url, delete_key, proxy_type, owner_ip, expire_datetime) VALUES ('%s', '%s', '%s', %s, '%s', %s)"
+            string query = "INSERT INTO entries(short_code, url, delete_key, proxy_type, owner_ip, expire_datetime) VALUES (QUOTE('%s'), QUOTE('%s'), QUOTE('%s'), %s, QUOTE('%s'), %s)"
                 .format(entry.shortCode, entry.url, entry.deleteKey, 
                         entry.proxyType.to!string, entry.ownerIp, expireDateTime);
             auto command = new Command(conn, query);
@@ -176,7 +177,7 @@ class Database
             auto eDateTime = entry.expireDateTime.isNull? 
                 "NULL" : "'%s'".format(toSQLTimestamp(entry.expireDateTime));
 
-            string query = "UPDATE entries SET short_code = '%s', url = '%s', delete_key = '%s', proxy_type = %d, owner_ip = '%s', create_datetime = %s, expire_datetime = %s WHERE id = %d".format(entry.shortCode, entry.url, entry.deleteKey, 
+            string query = "UPDATE entries SET short_code = QUOTE('%s'), url = QUOTE('%s'), delete_key = QUOTE('%s'), proxy_type = %d, owner_ip = QUOTE('%s'), create_datetime = QUOTE(%s), expire_datetime = QUOTE(%s) WHERE id = %d".format(entry.shortCode, entry.url, entry.deleteKey, 
                     entry.proxyType, entry.ownerIp, 
                     cDateTime, eDateTime, entry.id);
             logInfo(query);
@@ -190,7 +191,7 @@ class Database
                 enforce(id > 0);
             }
         body {
-            string query = "DELETE FROM entries WHERE id = %d".format(id);
+            string query = "DELETE FROM entries WHERE id = QUOTE(%d)".format(id);
             auto command = new Command(conn, query);
             command.execSQL();
         }
@@ -198,7 +199,7 @@ class Database
         void deleteExpiredEntries()
         {
             //count amount of expired entries so we can log about it
-            string cntQ = "select count(*) from entries WHERE expire_datetime <=  CURRENT_TIMESTAMP";
+            string cntQ = "SELECT Count(*) FROM Entries WHERE expire_datetime <=  CURRENT_TIMESTAMP";
             auto command = new Command(conn, cntQ);
             auto amount = command.execSQLResult()[0][0].coerce!int;
             string query = "DELETE FROM entries WHERE expire_datetime <=  CURRENT_TIMESTAMP";

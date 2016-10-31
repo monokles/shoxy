@@ -133,11 +133,19 @@ class ShoxyServer
                 "" : ":" ~ settings.port.to!string;
 
             auto dbSettings = new DatabaseSettings(settings.dbHost, settings.dbPort, settings.dbUser, settings.dbPassword, settings.dbName);
-            this.DB = new Database(dbSettings);
+
+            try
+            {
+                this.DB = new Database(dbSettings);
+            }
+            catch(Exception e)
+                {
+                logInfo("Could not connect to database at " ~ settings.dbHost ~ ":" ~ to!string(settings.dbPort));
+            }
 
             this.policy = ExpirationPolicy.GetPolicy(
-                    settings.expirationPolicy, 
-                    settings.expirationPolicySettings);
+            settings.expirationPolicy, 
+                settings.expirationPolicySettings);
 
             auto expInterval = durFromString(settings.expireCheckInterval);
             setTimer(expInterval, toDelegate(&DB.deleteExpiredEntries), true);

@@ -114,7 +114,7 @@ class ShoxyServer
             string value;
             do
             {
-                value = randomString(length + inc).toLower;
+                value = randomString(length + inc);
                 ++i;
                 inc += i % 10 == 0 ? 1 : 0;
                 if(length + inc > settings.maxShortcodeLength) {

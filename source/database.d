@@ -65,7 +65,7 @@ private string Schema =
 """
 CREATE TABLE IF NOT EXISTS entries (
     id              BIGINT        NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    short_code      VARCHAR(10)   NOT NULL,
+    short_code      VARCHAR(10)   COLLATE latin1_bin NOT NULL,
     url             VARCHAR(200)  NOT NULL,
     delete_key      CHAR(32)      NOT NULL,
     proxy_type      INT           NOT NULL,

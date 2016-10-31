@@ -35,7 +35,6 @@ class ShoxyServer
                         });
             } catch(Exception e) { 
                 logInfo("getContentType failed for %s", url);
-                logInfo("%s", e.toString()); 
             }
 
             return ret;

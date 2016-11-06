@@ -65,10 +65,11 @@ class ShoxyServer
                 return false;
             }
 
-            res.httpVersion     = proxiedReq.httpVersion;
-            res.statusCode      = proxiedReq.statusCode;
-            res.statusPhrase    = proxiedReq.statusPhrase;
-            res.headers["content-type"] = proxiedReq.headers.get("content-type");
+            res.httpVersion                 = proxiedReq.httpVersion;
+            res.statusCode                  = proxiedReq.statusCode;
+            res.statusPhrase                = proxiedReq.statusPhrase;
+            res.headers["content-type"]     = proxiedReq.headers.get("content-type");
+            res.headers["cache-control"]    = "no-cache";
             
             if ("transfer-encoding" in proxiedReq.headers)
             {

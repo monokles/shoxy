@@ -70,12 +70,13 @@ class ShoxyServer
             res.statusPhrase    = proxiedReq.statusPhrase;
             res.headers["content-type"] = proxiedReq.headers.get("content-type");
             
-            auto inputStream = proxiedReq.bodyReader;
-            auto outputStream = res.bodyWriter;
             if ("transfer-encoding" in proxiedReq.headers)
             {
                 res.headers["transfer-encoding"] = proxiedReq.headers.get("transfer-encoding");
             }
+
+            auto inputStream = proxiedReq.bodyReader;
+            auto outputStream = res.bodyWriter;
             
             proxyBodyStream(inputStream, outputStream);
             

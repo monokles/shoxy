@@ -71,9 +71,11 @@ class ShoxyServer
             res.headers["content-type"]     = proxiedReq.headers.get("content-type");
             res.headers["cache-control"]    = "no-cache";
             
-            if ("transfer-encoding" in proxiedReq.headers)
-            {
+            if ("transfer-encoding" in proxiedReq.headers) {
                 res.headers["transfer-encoding"] = proxiedReq.headers.get("transfer-encoding");
+            }
+            if ("content-length" in proxiedReq.headers) {
+                res.headers["content-length"] = proxiedReq.headers.get("content-length");
             }
 
             auto inputStream = proxiedReq.bodyReader;

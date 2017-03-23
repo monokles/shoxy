@@ -1,6 +1,39 @@
 doctype html
 head
     title Shoxy
+    :css
+    body {
+        text-align: center;
+    }
+    
+    ul.navigation {
+    	list-style-type: none;
+    	margin: 0;
+    	padding: 0;
+    	overflow: hidden;
+    	background-color: #333;
+    }
+    
+    li.navigation-item {
+    	float: left;
+    }
+    
+    li.navigation-item a {
+    	display: block;
+    	color: white;
+    	text-align: center;
+    	padding: 14px 16px;
+    	text-decoration: none;
+    }
+    
+    li.navigation-item a:hover {
+    	background-color: #111;
+    }
+    
+    h1.header {
+    	font-family: Inconsolata, monospace;
+    	color: #444;
+    }
 body
     h1 Shoxy - URL Shortener and proxy
 

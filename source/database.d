@@ -62,7 +62,7 @@ class DatabaseSettings
 }
 
 private string Schema = 
-"""
+"
 CREATE TABLE IF NOT EXISTS entries (
     id              BIGINT        NOT NULL AUTO_INCREMENT PRIMARY KEY,
     short_code      VARCHAR(10)   COLLATE latin1_bin NOT NULL,
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS entries (
     UNIQUE INDEX (short_code),
     UNIQUE INDEX (delete_key)
 )
-""";
+";
 
 class Database
 {
